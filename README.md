@@ -20,11 +20,11 @@ This is a scala implementation of a framework that builds a sparse-value flow gr
    * create a dependency to the svfa-scala artifact in your maven project. 
 
 ```{xml}
-<dependency>	
-  <groupId>br.ufpe.cin</groupId>
-  <artifactId>control-dependence-analysis</artifactId>
+<dependency>
+  <groupId>br.ufpe.cin.control-dependence-analysis_2</groupId>
+  <artifactId>12</artifactId>
   <version>0.1.0-SNAPSHOT</version>
- </dependency>
+</dependency>
 ```
 
    * implement a class that extends the `JSVFA class` (see some examples in the scala tests). you must provide implementations to the following methods
