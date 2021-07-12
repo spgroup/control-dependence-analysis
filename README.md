@@ -1,6 +1,6 @@
-# CDA (Control Dependce Analysis) implementation based on Soot
+# CDA (Control Dependence Analysis) implementation based on Soot
 
-This is a scala implementation of a framework that builds a sparse-value flow graph using Soot.
+This is a scala implementation of a framework that builds a control dependence edge using Soot and an Exceptional Block Graph Construction.
 
 ## Status
 
