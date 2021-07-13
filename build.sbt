@@ -7,7 +7,7 @@ version := "0.1.0-SNAPSHOT"
 
 githubOwner := "spgroup"
 githubRepository := "control-dependence-analysis"
-githubTokenSource := TokenSource.GitConfig("github.token")
+githubTokenSource := TokenSource.GitConfig("github.token") || TokenSource.Environment("GITHUB_TOKEN")
 
 parallelExecution in Test := false
 
