@@ -21,9 +21,9 @@ This is a scala implementation of a framework that builds a control dependence e
 
 ```{xml}
 <dependency>
-  <groupId>br.ufpe.cin.control-dependence-analysis_2</groupId>
-  <artifactId>12</artifactId>
-  <version>0.1.0-SNAPSHOT</version>
+  <groupId>br.ufpe.cin</groupId>
+  <artifactId>control-dependence-analysis_2.12</artifactId>
+  <version>0.1.2</version>
 </dependency>
 ```
 

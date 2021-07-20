@@ -46,11 +46,6 @@ abstract class JCDA extends CDA with Analysis with FieldSensitiveness with Sourc
       initAllocationSites()
 
       Scene.v().getEntryPoints.forEach(method => {
-
-//        LoopConditionUnroller x = new LoopConditionUnroller().transform(method.retrieveActiveBody())
-//
-//        UnreachableCodeEliminator.v().transform(method.retrieveActiveBody())
-
         traverse(method)
         methods = methods + 1
       })
@@ -62,41 +57,33 @@ abstract class JCDA extends CDA with Analysis with FieldSensitiveness with Sourc
       return
     }
 
-    traversedMethods.add(method)
+    try {
 
-    val body = method.retrieveActiveBody()
-    val blocks = new ExceptionalBlockGraph(body)
-    val EP = createNode(method)
+      traversedMethods.add(method)
 
-    addCDEdges(method, EP, ListBuffer[ValueNodeType](), blocks, 0, true, ListBuffer[Int]())
+      val body = method.retrieveActiveBody()
+      val blocks = new ExceptionalBlockGraph(body)
+      val EntryPointNode = createNode(method)
 
-  }
-
-  class ValueNodeType(va: Int, stmt: StmtNode) {
-    val value: Int = va
-    val nodeStmt: StmtNode = stmt
-
-    def show(): String = stmt.stmt.toString
-
-    override def equals(o: Any): Boolean = {
-      o match {
-        case stmt: StmtNode => stmt.value == value && stmt.stmt == nodeStmt
-        case _ => false
+      addCDEdges(method, EntryPointNode, ListBuffer[ValueNodeType](), blocks, 0, true, ListBuffer[Int]())
+    } catch {
+      case e: NullPointerException => {
+        println ("Error creating node, an invalid statement.")
       }
     }
   }
 
-  def ValueNodeType(va: Int, stmt: StmtNode) {
-    val value: Int = va
+  class ValueNodeType(valueIndex: Int, stmt: StmtNode) {
+    val value: Int = valueIndex
     val nodeStmt: StmtNode = stmt
 
-
+    def show(): String = stmt.stmt.toString
   }
 
   def addCDEdges(method: SootMethod, fromNode: StmtNode, visitedBlocks: ListBuffer[ValueNodeType], blocks: ExceptionalBlockGraph, value: Int, typeEdge: Boolean, exitList: ListBuffer[Int]): Unit = {
 
-    visitedBlocks.foreach( x =>{
-      if (x.value == value && x.nodeStmt == fromNode) {
+    visitedBlocks.foreach(visitedBlock =>{
+      if (visitedBlock.value == value && visitedBlock.nodeStmt == fromNode) {
         return
       }
     })
@@ -111,8 +98,8 @@ abstract class JCDA extends CDA with Analysis with FieldSensitiveness with Sourc
 
       var ifStmt = blockToIfstatement(blocks, value)
       var stmNodeX = createNode(method, ifStmt).stmt
-      visitedBlocks.foreach( x =>{
-        if (x.nodeStmt.stmt.stmt == stmNodeX.stmt) {
+      visitedBlocks.foreach(visitedBlock =>{
+        if (visitedBlock.nodeStmt.stmt.stmt == stmNodeX.stmt) {
           return
         }
       })
@@ -132,8 +119,8 @@ abstract class JCDA extends CDA with Analysis with FieldSensitiveness with Sourc
       }
 
       var hasReturnEdge = false
-      pred.forEach(x =>{
-        if (x.getIndexInMethod > block.getIndexInMethod){
+      pred.forEach(predElem =>{
+        if (predElem.getIndexInMethod > block.getIndexInMethod){
           hasReturnEdge = true
         }
       })
@@ -142,11 +129,11 @@ abstract class JCDA extends CDA with Analysis with FieldSensitiveness with Sourc
 
       var isAnIf = false
 
-      var l2 = ListBuffer[Boolean]()
-      var l3 = ListBuffer[Int]()
-      l3 += block.getIndexInMethod
-      hasAPathFromTo(block.getSuccs.get(0), block.getSuccs.get(1), l2, l3)
-      if (l2.contains(true)){
+      var booleanListWithBlock = ListBuffer[Boolean]()
+      var intListWithBlock = ListBuffer[Int]()
+      intListWithBlock += block.getIndexInMethod
+      hasAPathFromTo(block.getSuccs.get(0), block.getSuccs.get(1), booleanListWithBlock, intListWithBlock)
+      if (booleanListWithBlock.contains(true)){
         isAnIf = true
       }
 
@@ -163,11 +150,10 @@ abstract class JCDA extends CDA with Analysis with FieldSensitiveness with Sourc
       var isALoop = false
       var loopsList = new LoopNestTree(method.getActiveBody())
 
-      loopsList.forEach(l=> {
-        var st1 = l.getBackJumpStmt
-        var st2 = l.getHead
+      loopsList.forEach(loopElem=> {
+       var loopStatement = loopElem.getHead
 
-        if (ifStmt.equals(st2)){
+        if (ifStmt.equals(loopStatement)){
           isALoop = true
         }
       })
@@ -177,36 +163,17 @@ abstract class JCDA extends CDA with Analysis with FieldSensitiveness with Sourc
         itsWhile = true
       }
 
-
       var isAnIfElse = false
 
       if (enterBlock < valueHDC && exitBlock < valueHDC && valueHDC != -1 || (!isAnIf && !isALoop)) {
         isAnIfElse = true
       }
 
-//      if (!isALoop && !isAnIfElse){
-//        isAnIf = true
-//      }
-/*
-      if (isAnIf){
-        println("IF")
-      }
-
-      if (isAnIfElse) {
-        println("IF-ELSE")
-      }
-      if (itsDoWhile){
-        println("DO-WHILE")
-      }
-      if (itsWhile){
-        println("WHILE")
-      }
-*/
       if (valueHDC == -1 || isAnIf) { //It's an IF, WHILE, DO-WHILE, FOR and others
         var exitNotVisited = true
         if (isAnIf && !itsDoWhile) {
-          exitList.foreach(x =>{
-            if (x == exitBlock) {
+          exitList.foreach(exitElem =>{
+            if (exitElem == exitBlock) {
               exitNotVisited = false
             }
           })
@@ -241,8 +208,8 @@ abstract class JCDA extends CDA with Analysis with FieldSensitiveness with Sourc
       }
 
     }else if (block.getSuccs.size() == 1){
-      exitList.foreach(x =>{
-        if (x == block.getSuccs.get(0).getIndexInMethod) {
+      exitList.foreach(exitElem =>{
+        if (exitElem == block.getSuccs.get(0).getIndexInMethod) {
           return
         }
       })
@@ -254,8 +221,8 @@ abstract class JCDA extends CDA with Analysis with FieldSensitiveness with Sourc
 
   def isNotContainsGoto(block: Block): Boolean = {
     var contains = true
-    block.forEach(x => {
-      if (x.isInstanceOf[GotoStmt]) {
+    block.forEach(blockElem => {
+      if (blockElem.isInstanceOf[GotoStmt]) {
         contains = false
       }
     })
@@ -271,16 +238,15 @@ abstract class JCDA extends CDA with Analysis with FieldSensitiveness with Sourc
     val suc = enter.getSuccs
 
     if (suc.size() > 0){
-      suc.forEach(x => {
+      suc.forEach(actualSucc => {
 
-        if (x.getIndexInMethod == block.getIndexInMethod || x.getIndexInMethod == exit) {
+        if (actualSucc.getIndexInMethod == block.getIndexInMethod || actualSucc.getIndexInMethod == exit) {
           visitedPaths += true
           return visitedPaths
         }
-        if (!visitedBlock.contains(x.getIndexInMethod) && x.getIndexInMethod > block.getIndexInMethod){
-          hasAPathFromToDoWhile(x, block, exit, visitedPaths, visitedBlock)
+        if (!visitedBlock.contains(actualSucc.getIndexInMethod) && actualSucc.getIndexInMethod > block.getIndexInMethod){
+          hasAPathFromToDoWhile(actualSucc, block, exit, visitedPaths, visitedBlock)
         }
-
       })
     }
   }
@@ -294,16 +260,15 @@ abstract class JCDA extends CDA with Analysis with FieldSensitiveness with Sourc
     val suc = enter.getSuccs
 
     if (suc.size() > 0){
-      suc.forEach(x => {
+      suc.forEach(actualSucc => {
 
-        if (x.getIndexInMethod == exit.getIndexInMethod) {
+        if (actualSucc.getIndexInMethod == exit.getIndexInMethod) {
           visitedPaths += true
           return visitedPaths
         }
-        if (!visitedBlock.contains(x.getIndexInMethod)){
-          hasAPathFromTo(x, exit, visitedPaths, visitedBlock)
+        if (!visitedBlock.contains(actualSucc.getIndexInMethod)){
+          hasAPathFromTo(actualSucc, exit, visitedPaths, visitedBlock)
         }
-
       })
     }
   }
@@ -317,37 +282,35 @@ abstract class JCDA extends CDA with Analysis with FieldSensitiveness with Sourc
     return null
   }
 
-  def HCD(blocks: ExceptionalBlockGraph, pos: Int): Int = {
+  def HCD(blocks: ExceptionalBlockGraph, blockIndex: Int): Int = {
     var left =  ListBuffer[Int]()
     var right = ListBuffer[Int]()
 
-    left += pos
-    right += pos
+    left += blockIndex
+    right += blockIndex
     //Succs of left
-    var lIndex =  blocks.getBlocks.get(pos).getSuccs.get(0).getIndexInMethod
+    var lIndex =  blocks.getBlocks.get(blockIndex).getSuccs.get(0).getIndexInMethod
     getSuccsDFS(blocks, lIndex, left)
 
     //Succs of right
-    var rIndex = blocks.getBlocks.get(pos).getSuccs.get(1).getIndexInMethod
+    var rIndex = blocks.getBlocks.get(blockIndex).getSuccs.get(1).getIndexInMethod
     getSuccsDFS(blocks, rIndex, right)
 
-//    println(pos+" Left:"+left)
-//    println(pos+" Left:"+right)
     //    TODO: to use Binary Search
-    for (l <- left) {
-      if (right.contains(l) && l != pos){
-        return l
+    for (leftIndex <- left) {
+      if (right.contains(leftIndex) && leftIndex != blockIndex){
+        return leftIndex
       }
     }
     return -1
   }
 
-  def getSuccsDFS(blocks: ExceptionalBlockGraph, v: Int, visited: ListBuffer[Int]): Unit = {
-    if (visited.contains(v)) {
+  def getSuccsDFS(blocks: ExceptionalBlockGraph, actualIndex: Int, visited: ListBuffer[Int]): Unit = {
+    if (visited.contains(actualIndex)) {
       return
     }else {
-      visited += v
-      var block = blocks.getBlocks.get(v).getSuccs
+      visited += actualIndex
+      var block = blocks.getBlocks.get(actualIndex).getSuccs
       for (i <- 0 to block.size()-1){
         var vActual = block.get(i).getIndexInMethod
         if (!visited.contains(vActual)) {
@@ -416,11 +379,28 @@ abstract class JCDA extends CDA with Analysis with FieldSensitiveness with Sourc
   /*
    * creates a graph node from a sootMethod / sootUnit
    */
-  def createNode(method: SootMethod, stmt: soot.Unit): StmtNode =
-    new StmtNode(Stmt(method.getDeclaringClass.toString, method.getSignature, stmt.toString, stmt.getJavaSourceStartLineNumber), analyze(stmt))
+  def createNode(method: SootMethod, stmt: soot.Unit): StmtNode = {
+    try{
+      return new StmtNode(Stmt(method.getDeclaringClass.toString, method.getSignature, stmt.toString, stmt.getJavaSourceStartLineNumber), analyze(stmt))
+    }catch {
+      case e: NullPointerException => {
+        println("Error creating node, an invalid statement.")
+        return null
+      }
+    }
+  }
 
-  def createNode(method: SootMethod): StmtNode =
-    new StmtNode(Stmt(method.getDeclaringClass.toString, method.getSignature, "Entry Point", 0), SimpleNode)
+
+  def createNode(method: SootMethod): StmtNode = {
+    try {
+      return new StmtNode(Stmt(method.getDeclaringClass.toString, method.getSignature, "Entry Point", 0), SimpleNode)
+    } catch {
+    case e: NullPointerException => {
+        println ("Error creating node, an invalid statement.")
+        return null
+      }
+    }
+  }
 
 
   /**

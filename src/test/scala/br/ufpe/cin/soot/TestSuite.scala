@@ -8,27 +8,13 @@ import scala.collection.mutable.ListBuffer
 class TestSuite extends FunSuite with BeforeAndAfter {
 
 
-  test("we should correctly compute the number of nodes and edges in the BlackBoardTest sample") {
+  test ("we should correctly compute the number of nodes and edges in the BlackBoardTest sample") {
         val controlDependence = new BlackBoardTest( Array (5), Array (7))
 //    val controlDependence = new BlackBoardTest()
     controlDependence.buildCDA()
     var x = controlDependence.findConflictingPaths()
     println("Conflits: "+controlDependence.findConflictingPaths().size);
     println(controlDependence.svgToDotModel())
-  }
-
-  def thereIsPath(source: ListBuffer[LambdaNode], target: ListBuffer[LambdaNode], graph: Graph): Boolean ={
-    var thereIs = false
-    source.foreach(s =>{
-      target.foreach(t =>{
-        val path = graph.findPath(s, t)
-        if (path.size>0) {
-          println("There is a path from \""+s.show()+"\" to \""+ t.show()+"\"")
-          thereIs = true
-        }
-      })
-    })
-    return thereIs
   }
 
   test("we should correctly compute the number of nodes and edges in the NestedAll1Test sample") {
