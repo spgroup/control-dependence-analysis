@@ -128,8 +128,8 @@ abstract class CDA {
 
       for (i <- edgeNodes) {
          var x = i.value.label
-         var cd = new StringLabel("ControlDependency")
-         var cdFalse = new StringLabel("ControlDependencyFalse")
+         var cd = new StringLabel("ControlDependence")
+         var cdFalse = new StringLabel("ControlDependenceFalse")
          if (x.isInstanceOf[StringLabel]) {
 
             var auxStr = ""
@@ -146,7 +146,7 @@ abstract class CDA {
             var cdEdge = (cd.asInstanceOf[StringLabel]).edgeType.toString
             var cdEdgeFalse = (cdFalse.asInstanceOf[StringLabel]).edgeType.toString
             var a = (x.asInstanceOf[StringLabel]).edgeType.toString
-            if (a.equals(cdEdge)) { //If is Control Dependency Edge
+            if (a.equals(cdEdge)) { //If is Control Dependence Edge
                s ++= " "+auxStr + "[penwidth=3][label=\"T\"]" + "\n"
             } else if (a.equals(cdEdgeFalse)) {
                s ++= " "+auxStr + "[penwidth=3][label=\"F\"]" + "\n"

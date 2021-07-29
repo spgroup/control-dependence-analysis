@@ -14,8 +14,8 @@ sealed trait EdgeType
 case object CallSiteOpenEdge extends EdgeType { def instance: CallSiteOpenEdge.type = this }
 case object CallSiteCloseEdge extends EdgeType { def instance: CallSiteCloseEdge.type = this }
 case object SimpleEdge extends EdgeType { def instance: SimpleEdge.type = this }
-case object ControlDependency extends EdgeType { def instance: ControlDependency.type = this }
-case object ControlDependencyFalse extends EdgeType { def instance: ControlDependencyFalse.type = this }
+case object ControlDependence extends EdgeType { def instance: ControlDependence.type = this }
+case object ControlDependenceFalse extends EdgeType { def instance: ControlDependenceFalse.type = this }
 
 
 case class Stmt(className: String, method: String, stmt: String, line: Int)
@@ -34,10 +34,10 @@ class StringLabel(label: String) extends LambdaLabel {
 
 object EdgeType {
   def convert(edge: String): EdgeType = {
-    if(edge.equals(ControlDependency.toString)) {
-      ControlDependency
-    } else if (edge.equals(ControlDependencyFalse.toString)) {
-      ControlDependencyFalse
+    if(edge.equals(ControlDependence.toString)) {
+      ControlDependence
+    } else if (edge.equals(ControlDependenceFalse.toString)) {
+      ControlDependenceFalse
     }
     else SimpleEdge
   }

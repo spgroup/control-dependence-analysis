@@ -1,17 +1,21 @@
 package samples;
 public class BlackBoard {
-    public static String text = "";
-    public static void main(){
-        if (text != "" && hasWhiteSpace()){
-            normalizeWhiteSpace();
-            removeDuplicateWords();
+    public static int main(){
+        int x = 0;
+        if (x == 1){
+            x = x + 1;
         }
+
+        while (x ==2){
+            x = x + 2;
+            x = x + 3;
+        }
+        if (x != 0){
+            x = x * 2;
+        }
+        x = x + 4;
+        return x+1;
     }
 
-    public static void normalizeWhiteSpace(){};
-    public static boolean hasWhiteSpace(){
-        return true;
-    };
-    public static void removeDuplicateWords(){};
 
 }

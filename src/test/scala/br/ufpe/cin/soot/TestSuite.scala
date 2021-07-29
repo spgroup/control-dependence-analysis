@@ -9,8 +9,8 @@ class TestSuite extends FunSuite with BeforeAndAfter {
 
 
   test ("we should correctly compute the number of nodes and edges in the BlackBoardTest sample") {
-        val controlDependence = new BlackBoardTest( Array (5), Array (7))
-//    val controlDependence = new BlackBoardTest()
+//        val controlDependence = new BlackBoardTest( Array (5), Array (7))
+    val controlDependence = new BlackBoardTest()
     controlDependence.buildCDA()
     var x = controlDependence.findConflictingPaths()
     println("Conflits: "+controlDependence.findConflictingPaths().size);

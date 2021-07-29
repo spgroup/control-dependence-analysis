@@ -1,6 +1,6 @@
 package br.ufpe.cin.soot.cda.jimple
 
-import br.ufpe.cin.soot.graph.{ControlDependency, ControlDependencyFalse, LambdaNode, SimpleNode, Stmt, StmtNode, StringLabel}
+import br.ufpe.cin.soot.graph.{ControlDependence, ControlDependenceFalse, LambdaNode, SimpleNode, Stmt, StmtNode, StringLabel}
 import br.ufpe.cin.soot.cda.{CDA, SourceSinkDef}
 import br.ufpe.cin.soot.cda.rules.ArrayCopyRule
 
@@ -12,6 +12,7 @@ import com.typesafe.scalalogging.LazyLogging
 import soot.jimple.GotoStmt
 import soot.toolkits.graph.LoopNestTree
 import soot.toolkits.graph.ExceptionalBlockGraph
+import soot.toolkits.graph.pdg.{HashMutablePDG, RegionAnalysis}
 import soot.toolkits.scalar.SimpleLocalDefs
 import soot.{Local, Scene, SceneTransformer, SootMethod, Transform}
 
@@ -63,9 +64,11 @@ abstract class JCDA extends CDA with Analysis with FieldSensitiveness with Sourc
 
       val body = method.retrieveActiveBody()
       val blocks = new ExceptionalBlockGraph(body)
+
       val EntryPointNode = createNode(method)
 
       addCDEdges(method, EntryPointNode, ListBuffer[ValueNodeType](), blocks, 0, true, ListBuffer[Int]())
+
     } catch {
       case e: NullPointerException => {
         println ("Error creating node, an invalid statement.")
@@ -167,6 +170,19 @@ abstract class JCDA extends CDA with Analysis with FieldSensitiveness with Sourc
 
       if (enterBlock < valueHDC && exitBlock < valueHDC && valueHDC != -1 || (!isAnIf && !isALoop)) {
         isAnIfElse = true
+      }
+
+      if (isAnIf){
+        println("It's an IF")
+      }
+      if (isAnIfElse){
+        println("It's an IF-ELSE")
+      }
+      if (itsWhile){
+        println("It's a WHILE")
+      }
+      if (itsDoWhile && isALoop){
+        println("It's a DO-WHILE")
       }
 
       if (valueHDC == -1 || isAnIf) { //It's an IF, WHILE, DO-WHILE, FOR and others
@@ -339,20 +355,20 @@ abstract class JCDA extends CDA with Analysis with FieldSensitiveness with Sourc
   def addNodeEP(method: SootMethod, unit: soot.Unit): Boolean = {
     val source = createNode(method)
     val target = createNode(method, unit)
-    addEdgeControlDependency(source, target, true)
+    addEdgeControlDependence(source, target, true)
   }
 
   def addCDEdgeFromIf(sourceStmt: StmtNode, targetStmt: soot.Unit, method: SootMethod, typeEdge: Boolean): Unit ={
     val target = createNode(method, targetStmt)
     if (!targetStmt.isInstanceOf[GotoStmt]){
-      addEdgeControlDependency(sourceStmt, target, typeEdge)
+      addEdgeControlDependence(sourceStmt, target, typeEdge)
     }
   }
 
-  def addEdgeControlDependency(source: LambdaNode, target: LambdaNode, typeEdge: Boolean): Boolean = {
+  def addEdgeControlDependence(source: LambdaNode, target: LambdaNode, typeEdge: Boolean): Boolean = {
     var res = false
     if(!runInFullSparsenessMode() || true) {
-      val label = new StringLabel( if (typeEdge) (ControlDependency.toString) else (ControlDependencyFalse.toString))
+      val label = new StringLabel( if (typeEdge) (ControlDependence.toString) else (ControlDependenceFalse.toString))
       svg.addEdge(source, target, label)
       res = true
     }
