@@ -128,8 +128,8 @@ abstract class CDA {
 
       for (i <- edgeNodes) {
          var x = i.value.label
-         var cd = new StringLabel("ControlDependence")
-         var cdFalse = new StringLabel("ControlDependenceFalse")
+         var cd = new StringLabel("TrueEdge")
+         var cdFalse = new StringLabel("FalseEdge")
          if (x.isInstanceOf[StringLabel]) {
 
             var auxStr = ""

@@ -1,6 +1,10 @@
 package br.ufpe.cin.soot.graph
 
 import scalax.collection.edge.LDiEdge
+import soot.options.Options
+import soot.{Body, Timers}
+import soot.toolkits.graph.UnitGraph
+
 import scala.collection.immutable.HashSet
 
 sealed trait NodeType
@@ -14,8 +18,8 @@ sealed trait EdgeType
 case object CallSiteOpenEdge extends EdgeType { def instance: CallSiteOpenEdge.type = this }
 case object CallSiteCloseEdge extends EdgeType { def instance: CallSiteCloseEdge.type = this }
 case object SimpleEdge extends EdgeType { def instance: SimpleEdge.type = this }
-case object ControlDependence extends EdgeType { def instance: ControlDependence.type = this }
-case object ControlDependenceFalse extends EdgeType { def instance: ControlDependenceFalse.type = this }
+case object TrueEdge extends EdgeType { def instance: TrueEdge.type = this }
+case object FalseEdge extends EdgeType { def instance: FalseEdge.type = this }
 
 
 case class Stmt(className: String, method: String, stmt: String, line: Int)
@@ -34,10 +38,10 @@ class StringLabel(label: String) extends LambdaLabel {
 
 object EdgeType {
   def convert(edge: String): EdgeType = {
-    if(edge.equals(ControlDependence.toString)) {
-      ControlDependence
-    } else if (edge.equals(ControlDependenceFalse.toString)) {
-      ControlDependenceFalse
+    if(edge.equals(TrueEdge.toString)) {
+      TrueEdge
+    } else if (edge.equals(FalseEdge.toString)) {
+      FalseEdge
     }
     else SimpleEdge
   }
@@ -123,7 +127,8 @@ case class StmtNode(stmt: Stmt, stmtType: NodeType) extends LambdaNode {
   override def hashCode(): Int = 2 * stmt.hashCode() + nodeType.hashCode()
 }
 
-class Graph() {
+class Graph(){
+
   val graph = scalax.collection.mutable.Graph.empty[LambdaNode, LDiEdge]
 
   var fullGraph: Boolean = false

@@ -1,18 +1,17 @@
 package br.ufpe.cin.soot.cda.jimple
 
-import br.ufpe.cin.soot.graph.{ControlDependence, ControlDependenceFalse, LambdaNode, SimpleNode, Stmt, StmtNode, StringLabel}
-import br.ufpe.cin.soot.cda.{CDA, SourceSinkDef}
+import br.ufpe.cin.soot.graph.{FalseEdge, LambdaNode, SimpleNode, Stmt, StmtNode, StringLabel, TrueEdge, UnitDummy, UnitGraphNodes}
+import br.ufpe.cin.soot.cda.CDA
 import br.ufpe.cin.soot.cda.rules.ArrayCopyRule
 
 import java.util
 import soot.toolkits.graph._
-import br.ufpe.cin.soot.graph.StmtNode
 import br.ufpe.cin.soot.cda.SourceSinkDef
 import com.typesafe.scalalogging.LazyLogging
 import soot.jimple.GotoStmt
 import soot.toolkits.graph.LoopNestTree
 import soot.toolkits.graph.ExceptionalBlockGraph
-import soot.toolkits.graph.pdg.{HashMutablePDG, RegionAnalysis}
+import soot.toolkits.graph.pdg.HashMutablePDG
 import soot.toolkits.scalar.SimpleLocalDefs
 import soot.{Local, Scene, SceneTransformer, SootMethod, Transform}
 
@@ -58,25 +57,253 @@ abstract class JCDA extends CDA with Analysis with FieldSensitiveness with Sourc
       return
     }
 
-    try {
+//    try {
 
       traversedMethods.add(method)
 
       val body = method.retrieveActiveBody()
       val blocks = new ExceptionalBlockGraph(body)
+/*
+    //Create EntryPoint Node
+    val EntryPoint = createEntryPointNode(method)
+    //Create Start Node
+    val Start = createStartNode(method)
 
-      val EntryPointNode = createNode(method)
+    //Add edge from Entry Point to Start with label True
+    addEdgeControlDependence(EntryPoint, Start, true)
+    //Create Stop Node
+    val Stop = createStopNode(method)
 
-      addCDEdges(method, EntryPointNode, ListBuffer[ValueNodeType](), blocks, 0, true, ListBuffer[Int]())
+    //Add edge From Entry Point to Stop with label False
+    addEdgeControlDependence(EntryPoint, Stop, false)
 
-    } catch {
-      case e: NullPointerException => {
-        println ("Error creating node, an invalid statement.")
+    //Add edge from Start to first unit from block[0]
+    addEdgeFromBlockToStart(Start, blocks, 0, method)
+
+    //Add edge from into blocks
+    for (i <-  0 to blocks.getBlocks.size()-1) {
+      addEdgeinBlock(blocks, i, method)
+    }
+
+    blocks.getBlocks.forEach(block => {
+        if (block.getSuccs.size()==2){ //True and False edge
+          //Add edge from tail block from head succ 1 and succ 2
+          addEdgeFromBlockToSuccs(block, block.getSuccs.get(0), block.getSuccs.get(1), method)
+        }else if (block.getSuccs.size()==1){ //True edge
+          //Add edge from tail block from head succ 1
+          addEdgeFromBlockToSucc(block, block.getSuccs.get(0), method)
+        }else if (block.getSuccs.size == 0){ //Edge to Stop Node
+          addEdgeFromBlockToStop(Stop, blocks, block.getIndexInMethod, method)
+        }
+      })
+    */
+
+    val cfg = new BriefBlockGraph(body)
+
+//      BlockGraphConverter.addStartStopNodesTo(cfg)
+
+//      BlockGraphConverter.reverse(cfg)
+
+    var unitGraph2 = new BriefUnitGraph(body)
+    val initialGraph = new BriefUnitGraph(body)
+
+    //Eric's PDG Implementation
+
+    val graph2 = new UnitGraphNodes(body)
+
+    val analysis = new MHGPostDominatorsFinder(graph2)
+    /*
+    println("\ndigraph { ")
+    val it = body.getUnits.iterator
+    while (it.hasNext()) {
+      val s = it.next()
+      val dominators = analysis.getDominators(s)
+      val dIt = dominators.iterator
+      while (dIt.hasNext()) {
+        val ds = dIt.next()
+
+        //        addEdgeGraph(ds, s, method)
+
+        if (ds!=s){
+          if (s.isInstanceOf[UnitDummy] && ds.isInstanceOf[UnitDummy]){
+            val info = "\"" +ds.getUseAndDefBoxes.get(0).getValue +"\"" + " -> " + "\""+s.getUseAndDefBoxes.get(0).getValue+"\""
+            println(info)
+          }else if (s.isInstanceOf[UnitDummy]){
+            val info = "\"" +ds +"\"" + " -> " + "\""+s.getUseAndDefBoxes.get(0).getValue+"\""
+            println(info)
+          }else if (ds.isInstanceOf[UnitDummy]){
+            val info = "\"" +ds.getUseAndDefBoxes.get(0).getValue +"\"" + " -> " + "\""+s+"\""
+            println(info)
+          }else {
+            val info = "\"" +ds +"\"" + " -> " + "\""+s+"\""
+            println(info)
+          }
+        }
       }
+    }
+    println("}")
+*/
+
+    graph2.forEach(unit => {
+      var edges = graph2.getSuccsOf(unit)
+
+      if (unit.getUseAndDefBoxes.size()>0){
+        if ((unit.branches()) || unit.getUseAndDefBoxes.get(0).getValue.toString().contains("EntryPoint")){ //It's a conditional statement: True e False Edge
+          var ADominators = analysis.getDominators(unit)
+
+          //Find a path with from unit to edges, using the post-dominator graph, excluding the LCA node
+          //Add True and False edge
+
+          var BDominators = analysis.getDominators(edges.get(0))
+//          println("\n("+unit+", "+edges.get(0)+") -> ")
+          var dItB = BDominators.iterator
+          while (dItB.hasNext()) {
+            val dsB = dItB.next()
+            if (!ADominators.contains(dsB)){
+              addControlDependenceEdge(unit, dsB, true, method)
+//              print(dsB+", ")
+            }
+          }
+
+          BDominators = analysis.getDominators(edges.get(1))
+//          println("\n("+unit+", "+edges.get(1)+") -> ")
+          dItB = BDominators.iterator
+          while (dItB.hasNext()) {
+            val dsB = dItB.next()
+            if (!ADominators.contains(dsB)){
+              addControlDependenceEdge(unit, dsB, false, method)
+//              print(dsB+", ")
+            }
+          }
+
+        }else{
+          //Find a path with from unit to edges, using the post-dominator graph, excluding the LCA node
+          var ADominators = analysis.getDominators(unit)
+          var BDominators = analysis.getDominators(edges.get(0))
+//          println("\n("+unit+", "+edges.get(0)+") -> ")
+          var dItB = BDominators.iterator
+          while (dItB.hasNext()) {
+            val dsB = dItB.next()
+            if (!ADominators.contains(dsB)){
+              addControlDependenceEdge(unit, edges.get(0), true, method)
+//              print(dsB+", ")
+            }
+          }
+
+        }
+      }
+    })
+
+    var xxx = graph2.getHeads.get(0).getUseAndDefBoxes
+
+    val analysis2 = new MHGPostDominatorsFinder(cfg)
+
+/*
+      val it = cfg.getBlocks.iterator
+      println("digraph { ")
+      while (it.hasNext()) {
+        val s = it.next()
+        val dominators = analysis2.getDominators(s)
+        val dIt = dominators.iterator
+
+//        l += dIt.next()
+//        println("\""+s+"\"")
+//        println(dominators)
+        dominators.iterator.forEachRemaining(unit =>{
+          if (unit.getSuccs().size()!=0) {
+            println(unit)
+          }
+        })
+
+        while (dIt.hasNext()) {
+          val ds = dIt.next()
+//          if (ds!=s){
+//            val info = "\"" +ds +"\"" + " -> " + "\""+s+"\""
+//            println(info)
+//            println(new LinkTag(info, ds, body.getMethod.getDeclaringClass.getName, "Dominators"))
+//          }
+        }
+      }
+//      println(l)
+      println("}")
+*/
+//      val pdg = new HashMutablePDG(graph2)
+//
+//      var y = pdg.getWeakRegions
+//      var x = pdg.getStrongRegions
+
+//      controlDependence(pdg, method)
+
+//      val EntryPointNode = createNodeEntryPoint(method)
+//
+//      addCDEdges(method, EntryPointNode, ListBuffer[ValueNodeType](), blocks, 0, true, ListBuffer[Int]())
+
+//    } catch {
+//      case e: NullPointerException => {
+//        println ("Error creating node, an invalid statement.")
+//      }
+//    }
+  }
+
+  def addControlDependenceEdge(s: soot.Unit, t: soot.Unit, typeEdge: Boolean, method: SootMethod): Unit = {
+    if (s.isInstanceOf[GotoStmt] || t.isInstanceOf[GotoStmt]) return
+    var source = createNode(method, s)
+    var target = createNode(method, t)
+
+    if (s.isInstanceOf[UnitDummy]) {
+      if (s.getUseAndDefBoxes.get(0).getValue.toString().contains("EntryPoint")) {
+        source = createEntryPointNode(method)
+      } else if (s.getUseAndDefBoxes.get(0).getValue.toString().contains("Start")) {
+        source = createStartNode(method)
+      } else if (s.getUseAndDefBoxes.get(0).getValue.toString().contains("Stop")) {
+        source = createStopNode(method)
+      }
+    }
+
+    if (t.isInstanceOf[UnitDummy]){
+      if (t.getUseAndDefBoxes.get(0).getValue.toString().contains("EntryPoint")) {
+        target = createEntryPointNode(method)
+      }else if (t.getUseAndDefBoxes.get(0).getValue.toString().contains("Start")){
+        target = createStartNode(method)
+      } else if (t.getUseAndDefBoxes.get(0).getValue.toString().contains("Stop")){
+        target = createStopNode(method)
+      }
+    }
+
+    addEdgeControlDependence(source, target, typeEdge)
+  }
+
+  def controlDependence(pdg: HashMutablePDG, method: SootMethod): Unit = {
+    val regions = pdg.getStrongRegions
+
+    var isNotEntryPoint = true
+    var pos = -1
+    while (isNotEntryPoint && pos < pdg.getStrongRegions.size()) {
+      pos = pos + 1
+      if (pdg.getStrongRegions.get(pos).getID==0){
+        isNotEntryPoint = false
+      }
+    }
+
+
+    var cont = 1
+    if (pdg.getStrongRegions.get(pos).getID == 0){
+      pdg.GetStartRegion.getUnits.forEach(unit => {
+        addNodeEP(method, unit)
+        if (unit.isInstanceOf[IfStmt]) {
+          pdg.getStrongRegions.get(cont).getUnits.forEach(unitTo => {
+            val source = createNode(method, unit)
+            val target = createNode(method, unitTo)
+            addEdgeControlDependence(source, target, true)
+          })
+          cont = cont + 1
+        }
+
+      })
     }
   }
 
-  class ValueNodeType(valueIndex: Int, stmt: StmtNode) {
+    class ValueNodeType(valueIndex: Int, stmt: StmtNode) {
     val value: Int = valueIndex
     val nodeStmt: StmtNode = stmt
 
@@ -353,7 +580,7 @@ abstract class JCDA extends CDA with Analysis with FieldSensitiveness with Sourc
   }
 
   def addNodeEP(method: SootMethod, unit: soot.Unit): Boolean = {
-    val source = createNode(method)
+    val source = createEntryPointNode(method)
     val target = createNode(method, unit)
     addEdgeControlDependence(source, target, true)
   }
@@ -368,8 +595,17 @@ abstract class JCDA extends CDA with Analysis with FieldSensitiveness with Sourc
   def addEdgeControlDependence(source: LambdaNode, target: LambdaNode, typeEdge: Boolean): Boolean = {
     var res = false
     if(!runInFullSparsenessMode() || true) {
-      val label = new StringLabel( if (typeEdge) (ControlDependence.toString) else (ControlDependenceFalse.toString))
+      val label = new StringLabel( if (typeEdge) (TrueEdge.toString) else (FalseEdge.toString))
       svg.addEdge(source, target, label)
+      res = true
+    }
+    return res
+  }
+
+  def addEdge(source: LambdaNode, target: LambdaNode): Boolean = {
+    var res = false
+    if(!runInFullSparsenessMode() || true) {
+      svg.addEdge(source, target)
       res = true
     }
     return res
@@ -407,7 +643,7 @@ abstract class JCDA extends CDA with Analysis with FieldSensitiveness with Sourc
   }
 
 
-  def createNode(method: SootMethod): StmtNode = {
+  def createEntryPointNode(method: SootMethod): StmtNode = {
     try {
       return new StmtNode(Stmt(method.getDeclaringClass.toString, method.getSignature, "Entry Point", 0), SimpleNode)
     } catch {
@@ -418,6 +654,27 @@ abstract class JCDA extends CDA with Analysis with FieldSensitiveness with Sourc
     }
   }
 
+  def createStartNode(method: SootMethod): StmtNode = {
+    try {
+      return new StmtNode(Stmt(method.getDeclaringClass.toString, method.getSignature, "Start", 0), SimpleNode)
+    } catch {
+      case e: NullPointerException => {
+        println ("Error creating node, an invalid statement.")
+        return null
+      }
+    }
+  }
+
+  def createStopNode(method: SootMethod): StmtNode = {
+    try {
+      return new StmtNode(Stmt(method.getDeclaringClass.toString, method.getSignature, "Stop", 0), SimpleNode)
+    } catch {
+      case e: NullPointerException => {
+        println ("Error creating node, an invalid statement.")
+        return null
+      }
+    }
+  }
 
   /**
    * Override this method in the case that
