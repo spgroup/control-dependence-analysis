@@ -5,12 +5,34 @@ import org.scalatest.{BeforeAndAfter, FunSuite}
 class TestSuite extends FunSuite with BeforeAndAfter {
 
   test ("we should correctly compute the number of nodes and edges in the BlackBoardTest sample") {
-//        val controlDependence = new BlackBoardTest( Array (5), Array (9))
-    val controlDependence = new BlackBoardTest()
+        val controlDependence = new BlackBoardTest( Array (5), Array (9))
+//    val controlDependence = new BlackBoardTest()
     controlDependence.buildCDA()
     var x = controlDependence.findConflictingPaths()
     println("Conflits: "+controlDependence.findConflictingPaths().size);
     println(controlDependence.svgToDotModel())
+  }
+
+  test ("we should correctly compute the number of conflicts in the OneReturnZeroConflitc sample") {
+    val controlDependence = new OneReturnZeroConflictTest( Array (5), Array (8))
+    controlDependence.buildCDA()
+    var x = controlDependence.findConflictingPaths()
+//    println("Conflits: "+controlDependence.findConflictingPaths().size);
+    println(controlDependence.svgToDotModel())
+    assert(controlDependence.findConflictingPaths().size == 0)
+    assert(controlDependence.svg.numberOfNodes() == 6)
+    assert(controlDependence.svg.numberOfEdges() == 5)
+  }
+
+  test ("we should correctly compute the number of conflicts in the TwoReturnOneConflitc sample") {
+    val controlDependence = new TwoReturnOneConflictTest( Array (5), Array (8))
+    controlDependence.buildCDA()
+    var x = controlDependence.findConflictingPaths()
+//    println("Conflits: "+controlDependence.findConflictingPaths().size);
+    println(controlDependence.svgToDotModel())
+    assert(controlDependence.findConflictingPaths().size == 1)
+    assert(controlDependence.svg.numberOfNodes() == 6)
+    assert(controlDependence.svg.numberOfEdges() == 5)
   }
 
   test("we should correctly compute the number of nodes and edges in the NestedAll1Test sample") {
@@ -118,9 +140,11 @@ class TestSuite extends FunSuite with BeforeAndAfter {
   }
 
   test("we should correctly compute the number of nodes and edges in the OneDoWhileAndOneIfTest sample") {
-    val controlDependence = new OneDoWhileAndOneIfTest()
+    val controlDependence = new OneDoWhileAndOneIfTest(Array (11), Array (6))
     controlDependence.buildCDA()
+//    println("Conflits: "+controlDependence.findConflictingPaths().size);
 //    println(controlDependence.svgToDotModel())
+    assert(controlDependence.findConflictingPaths().size == 1)
     assert(controlDependence.svg.numberOfNodes() == 10)
     assert(controlDependence.svg.numberOfEdges() == 12)
   }

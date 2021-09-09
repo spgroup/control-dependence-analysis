@@ -237,13 +237,13 @@ public class UnitGraphNodes extends UnitGraph implements ExceptionalGraph<Unit> 
         buildHeadsAndTails(trapUnitsThatAreHeads);
 
         Local dummyLocal = new LocalDummy("Start", soot.NullType.v());
-        UnitDummy startStmt = new UnitDummy(dummyLocal);
+        UnitDummy startStmt = new UnitDummy(dummyLocal, "Start");
 
         dummyLocal = new LocalDummy("Stop", soot.NullType.v());
-        UnitDummy stopStmt = new UnitDummy(dummyLocal);
+        UnitDummy stopStmt = new UnitDummy(dummyLocal, "Stop");
 
         dummyLocal = new LocalDummy("EntryPoint", soot.NullType.v());
-        UnitDummy entryPointStmt = new UnitDummy(dummyLocal);
+        UnitDummy entryPointStmt = new UnitDummy(dummyLocal, "EntryPoint");
 
         unitChain.addFirst(entryPointStmt);
         unitChain.addFirst(startStmt);
@@ -288,11 +288,8 @@ public class UnitGraphNodes extends UnitGraph implements ExceptionalGraph<Unit> 
         succs = new ArrayList<Unit>();
         succs.add(stopStmt);
 
-        for (Unit s : unitChain) {
-            List<Unit> actualStmt = unitToSuccs.get(s);
-            if (actualStmt == null || actualStmt.isEmpty()) {
-                unitToSuccs.put(s, succs);
-            }
+        for (Unit s : tails) {
+            unitToSuccs.put(s, succs);
         }
 
         this.heads.clear();

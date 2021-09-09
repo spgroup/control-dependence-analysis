@@ -4,16 +4,23 @@ import soot.Unit;
 import soot.UnitPrinter;
 import soot.Value;
 import soot.ValueBox;
-import soot.baf.Baf;
 import soot.jimple.*;
-import soot.jimple.internal.AbstractOpStmt;
-import soot.util.Switch;
-
 import java.util.List;
 
-public class UnitDummy extends AbstractOpStmt implements ExitMonitorStmt {
-     public UnitDummy(Value op) {
-          this(Jimple.v(). newRValueBox(op));
+public class UnitDummy extends AbstractDummyStmt implements soot.jimple.Stmt {
+     private String dummyNode;
+
+     public UnitDummy(Value op, String node) {
+          this(Jimple.v().newVariableBox(op));
+          this.dummyNode = node;
+     }
+
+     public String getDummyNode(){
+          return this.dummyNode;
+     }
+
+     public void setDummyNode(String dummyNode){
+          this.dummyNode = dummyNode;
      }
 
      protected UnitDummy(ValueBox opBox) {
@@ -21,29 +28,18 @@ public class UnitDummy extends AbstractOpStmt implements ExitMonitorStmt {
      }
 
      public Object clone() {
-          return new UnitDummy(Jimple.cloneIfNecessary(getOp()));
+          return null;
      }
 
      public String toString() {
-          return Jimple.NULL;
+          return this.dummyNode;
      }
 
      public void toString(UnitPrinter up) {
-          up.literal(Jimple.NULL);
-          up.literal("UnitDummy");
+          up.literal(this.dummyNode);
      }
 
-     public void apply(Switch sw) {
-          ((StmtSwitch) sw).caseExitMonitorStmt(this);
-     }
-
-     public void convertToBaf(JimpleToBafContext context, List<Unit> out) {
-          ((ConvertToBaf) (getOp())).convertToBaf(context, out);
-
-          Unit u = Baf.v().newExitMonitorInst();
-          u.addAllTagsOf(this);
-          out.add(u);
-     }
+     public void convertToBaf(JimpleToBafContext context, List<Unit> out) {}
 
      public boolean fallsThrough() {
           return true;
