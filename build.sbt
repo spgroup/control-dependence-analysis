@@ -3,7 +3,7 @@ scalaVersion := "2.12.8"
 name := "control-dependence-analysis"
 organization := "br.ufpe.cin"
 
-version := "0.1.0-SNAPSHOT"
+version := "0.1.3"
 
 githubOwner := "spgroup"
 githubRepository := "control-dependence-analysis"
